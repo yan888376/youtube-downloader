@@ -4,6 +4,16 @@ const http = require('http');
 const { Server } = require("socket.io");
 const play = require('play-dl');
 
+// -- 设置YouTube Cookie --
+if (process.env.YOUTUBE_COOKIE) {
+  play.setToken({
+    youtube: {
+      cookie: process.env.YOUTUBE_COOKIE,
+    },
+  });
+  console.log("YouTube Cookie已设置。");
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
