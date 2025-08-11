@@ -1,0 +1,18 @@
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
+#video-description {
+    white-space: pre-wrap; /* 保留描述中的换行和空格 */
+    word-break: break-word; /* 防止长单词溢出 */
+}
