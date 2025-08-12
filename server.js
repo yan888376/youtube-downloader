@@ -3,6 +3,7 @@ const path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
 const play = require('play-dl');
+const axios = require('axios'); // 引入axios
 
 // -- 设置YouTube Cookie (仅在生产环境) --
 if (process.env.YOUTUBE_COOKIE) {
@@ -65,41 +66,55 @@ app.post('/info', async (req, res) => {
 
 app.post('/download', async (req, res) => {
     try {
-        const { url, socketId, title } = req.body; // 新增接收 title
+        const { url, socketId, title } = req.body;
         if (!url || !title) {
             return res.status(400).send('无效的URL或标题');
         }
 
-        // 直接使用前端传来的标题，不再于此获取视频信息
         const sanitizedTitle = title.replace(/[\\/:\*\?"<>\|]/g, '-');
         const disposition = `attachment; filename*=UTF-8''${encodeURIComponent(sanitizedTitle)}.mp4`;
         res.setHeader('Content-Disposition', disposition);
 
-        const stream = await play.stream(url);
-        
+        // --- 使用B计划：手动获取直接链接并用axios下载 ---
+        const videoInfo = await play.video_info(url);
+        const format = videoInfo.format.find(f => f.qualityLabel && f.url);
+        if (!format || !format.url) {
+            return res.status(404).send('找不到可用的下载链接。');
+        }
+
+        const videoUrl = format.url;
+
+        const response = await axios({
+            method: 'get',
+            url: videoUrl,
+            responseType: 'stream'
+        });
+
+        const total = parseInt(response.headers['content-length'], 10);
         let downloaded = 0;
-        let total = stream.size;
         let lastEmit = 0;
 
-        stream.stream.on('data', (chunk) => {
+        response.data.on('data', (chunk) => {
             downloaded += chunk.length;
-            const percent = downloaded / total;
-            const now = Date.now();
-            if (now - lastEmit > 1000) {
-                 if (socketId && io.sockets.sockets.get(socketId)) {
-                    io.to(socketId).emit('downloadProgress', { progress: Math.round(percent * 100) });
-                    lastEmit = now;
+            if (total) {
+                const percent = downloaded / total;
+                const now = Date.now();
+                if (now - lastEmit > 1000) {
+                     if (socketId && io.sockets.sockets.get(socketId)) {
+                        io.to(socketId).emit('downloadProgress', { progress: Math.round(percent * 100) });
+                        lastEmit = now;
+                    }
                 }
             }
         });
 
-        stream.stream.on('end', () => {
+        response.data.on('end', () => {
              if (socketId && io.sockets.sockets.get(socketId)) {
                 io.to(socketId).emit('downloadProgress', { progress: 100 });
             }
         });
-
-        stream.stream.pipe(res);
+        
+        response.data.pipe(res);
 
     } catch (error) {
         console.error('下载视频时出错:', error);
