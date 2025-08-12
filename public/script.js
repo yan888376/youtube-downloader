@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyList = document.getElementById('history-list');
     
     let currentUrl = '';
-    let currentTitle = ''; // 新增变量来存储当前视频标题
+    let currentTitle = '';
+    let currentDirectUrl = ''; // 新增变量来存储直接下载链接
 
     // -- 历史记录相关函数 --
     const MAX_HISTORY = 10;
@@ -98,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentUrl = url; // 保存当前URL
         currentTitle = ''; // 重置标题
+        currentDirectUrl = ''; // 重置直接下载链接
         resetVideoInfo();
         showLoadingState();
 
@@ -115,7 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 videoThumbnail.src = data.thumbnail;
                 videoTitle.textContent = data.title;
-                currentTitle = data.title; // 获取并存储标题
+                currentTitle = data.title;
+                currentDirectUrl = data.directUrl; // 获取并存储直接下载链接
                 videoDescription.textContent = data.description;
                 uploadDate.textContent = data.uploadDate;
                 videoSize.textContent = data.size;
@@ -135,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     downloadBtn.addEventListener('click', () => {
-        if (!currentUrl || !currentTitle || !socket.id) {
+        if (!currentDirectUrl || !currentTitle || !socket.id) {
             alert('无法开始下载，请先解析一个有效的URL。');
             return;
         }
@@ -148,13 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
         form.method = 'POST';
         form.action = '/download';
         
-        const urlField = document.createElement('input');
-        urlField.type = 'hidden';
-        urlField.name = 'url';
-        urlField.value = currentUrl;
-        form.appendChild(urlField);
+        const directUrlField = document.createElement('input'); // 改为发送直接链接
+        directUrlField.type = 'hidden';
+        directUrlField.name = 'directUrl';
+        directUrlField.value = currentDirectUrl;
+        form.appendChild(directUrlField);
         
-        const titleField = document.createElement('input'); // 新增标题字段
+        const titleField = document.createElement('input');
         titleField.type = 'hidden';
         titleField.name = 'title';
         titleField.value = currentTitle;

@@ -49,6 +49,11 @@ app.post('/info', async (req, res) => {
         // 直接从获取到的信息中找到最佳格式和大小
         const format = videoInfo.format.find(f => f.qualityLabel && f.url);
         const fileSize = format && format.content_length ? (format.content_length / 1024 / 1024).toFixed(2) + ' MB' : '未知大小';
+        const directUrl = format ? format.url : null; // 获取直接下载链接
+
+        if (!directUrl) {
+            return res.status(404).json({ success: false, error: '找不到可用的下载链接。' });
+        }
 
         res.json({
             success: true,
@@ -57,6 +62,7 @@ app.post('/info', async (req, res) => {
             thumbnail: videoDetails.thumbnails[videoDetails.thumbnails.length - 1].url,
             uploadDate: videoDetails.uploadedAt,
             size: fileSize,
+            directUrl: directUrl, // 将直接链接也发送给前端
         });
     } catch (error) {
         console.error('Error fetching video info:', error);
@@ -66,8 +72,8 @@ app.post('/info', async (req, res) => {
 
 app.post('/download', async (req, res) => {
     try {
-        const { url, socketId, title } = req.body;
-        if (!url || !title) {
+        const { directUrl, socketId, title } = req.body; // 改为接收 directUrl
+        if (!directUrl || !title) {
             return res.status(400).send('无效的URL或标题');
         }
 
@@ -75,18 +81,10 @@ app.post('/download', async (req, res) => {
         const disposition = `attachment; filename*=UTF-8''${encodeURIComponent(sanitizedTitle)}.mp4`;
         res.setHeader('Content-Disposition', disposition);
 
-        // --- 使用B计划：手动获取直接链接并用axios下载 ---
-        const videoInfo = await play.video_info(url);
-        const format = videoInfo.format.find(f => f.qualityLabel && f.url);
-        if (!format || !format.url) {
-            return res.status(404).send('找不到可用的下载链接。');
-        }
-
-        const videoUrl = format.url;
-
+        // --- B计划：直接用axios下载前端发来的直接链接 ---
         const response = await axios({
             method: 'get',
-            url: videoUrl,
+            url: directUrl,
             responseType: 'stream'
         });
 
