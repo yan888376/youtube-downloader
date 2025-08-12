@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 const play = require('play-dl');
 
-// -- 设置YouTube Cookie --
+// -- 设置YouTube Cookie (仅在生产环境) --
 if (process.env.YOUTUBE_COOKIE) {
   play.setToken({
     youtube: {
@@ -12,6 +12,8 @@ if (process.env.YOUTUBE_COOKIE) {
     },
   });
   console.log("YouTube Cookie已设置。");
+} else {
+  console.log("未检测到YouTube Cookie，将以普通模式运行。");
 }
 
 const app = express();
