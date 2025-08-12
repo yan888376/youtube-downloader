@@ -70,13 +70,12 @@ app.post('/download', async (req, res) => {
             return res.status(400).send('无效的URL');
         }
 
-        const videoInfo = await play.video_info(url);
-        const title = videoInfo.video_details.title;
+        const stream = await play.stream(url);
+        
+        const title = stream.video_details.title;
         const sanitizedTitle = title.replace(/[\\/:\*\?"<>\|]/g, '-');
         const disposition = `attachment; filename*=UTF-8''${encodeURIComponent(sanitizedTitle)}.mp4`;
         res.setHeader('Content-Disposition', disposition);
-
-        const stream = await play.stream(url);
         
         let downloaded = 0;
         let total = stream.size;
