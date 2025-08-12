@@ -70,7 +70,10 @@ app.post('/download', async (req, res) => {
             return res.status(400).send('无效的URL');
         }
 
-        const stream = await play.stream(url);
+        const stream = await play.stream(url, {
+            // 在这里直接请求视频信息，避免二次调用
+            discordPlayerCompatibility: true 
+        });
         
         const title = stream.video_details.title;
         const sanitizedTitle = title.replace(/[\\/:\*\?"<>\|]/g, '-');
