@@ -45,10 +45,9 @@ app.post('/info', async (req, res) => {
         const videoInfo = await play.video_info(url);
         const videoDetails = videoInfo.video_details;
 
-        // play-dl 自动选择最佳格式，我们只需获取信息
-        const streamInfo = await play.stream(url);
-        
-        const fileSize = streamInfo.size ? (streamInfo.size / 1024 / 1024).toFixed(2) + ' MB' : '未知大小';
+        // 直接从获取到的信息中找到最佳格式和大小
+        const format = videoInfo.format.find(f => f.qualityLabel && f.url);
+        const fileSize = format && format.content_length ? (format.content_length / 1024 / 1024).toFixed(2) + ' MB' : '未知大小';
 
         res.json({
             success: true,
