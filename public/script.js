@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyList = document.getElementById('history-list');
     
     let currentUrl = '';
+    let currentTitle = ''; // 新增变量来存储当前视频标题
 
     // -- 历史记录相关函数 --
     const MAX_HISTORY = 10;
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentUrl = url; // 保存当前URL
+        currentTitle = ''; // 重置标题
         resetVideoInfo();
         showLoadingState();
 
@@ -113,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 videoThumbnail.src = data.thumbnail;
                 videoTitle.textContent = data.title;
+                currentTitle = data.title; // 获取并存储标题
                 videoDescription.textContent = data.description;
                 uploadDate.textContent = data.uploadDate;
                 videoSize.textContent = data.size;
@@ -132,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     downloadBtn.addEventListener('click', () => {
-        if (!currentUrl || !socket.id) {
+        if (!currentUrl || !currentTitle || !socket.id) {
             alert('无法开始下载，请先解析一个有效的URL。');
             return;
         }
@@ -151,6 +154,12 @@ document.addEventListener('DOMContentLoaded', () => {
         urlField.value = currentUrl;
         form.appendChild(urlField);
         
+        const titleField = document.createElement('input'); // 新增标题字段
+        titleField.type = 'hidden';
+        titleField.name = 'title';
+        titleField.value = currentTitle;
+        form.appendChild(titleField);
+
         const socketIdField = document.createElement('input');
         socketIdField.type = 'hidden';
         socketIdField.name = 'socketId';

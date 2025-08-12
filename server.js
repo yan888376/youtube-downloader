@@ -65,20 +65,17 @@ app.post('/info', async (req, res) => {
 
 app.post('/download', async (req, res) => {
     try {
-        const { url, socketId } = req.body;
-        if (!url) {
-            return res.status(400).send('无效的URL');
+        const { url, socketId, title } = req.body; // 新增接收 title
+        if (!url || !title) {
+            return res.status(400).send('无效的URL或标题');
         }
 
-        const stream = await play.stream(url, {
-            // 在这里直接请求视频信息，避免二次调用
-            discordPlayerCompatibility: true 
-        });
-        
-        const title = stream.video_details.title;
+        // 直接使用前端传来的标题，不再于此获取视频信息
         const sanitizedTitle = title.replace(/[\\/:\*\?"<>\|]/g, '-');
         const disposition = `attachment; filename*=UTF-8''${encodeURIComponent(sanitizedTitle)}.mp4`;
         res.setHeader('Content-Disposition', disposition);
+
+        const stream = await play.stream(url);
         
         let downloaded = 0;
         let total = stream.size;
